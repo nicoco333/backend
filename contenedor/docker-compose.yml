@@ -1,0 +1,32 @@
+version: '3.1'
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: keycloak
+    command: start-dev
+    ports:
+      - "8081:8080" # Keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin123
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
+  # --- ¡AQUÍ EMPIEZA LO NUEVO! ---
+  postgres:
+    image: postgres:15
+    container_name: postgres-db
+    ports:
+      - "5432:5432" # Expone el puerto de Postgres a tu localhost
+    environment:
+      # Estas variables DEBEN coincidir con application.properties
+      - POSTGRES_DB=mi_base_de_datos
+      - POSTGRES_USER=mi_usuario
+      - POSTGRES_PASSWORD=tpi123
+      - TZ=UTC
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  keycloak_data:
+  postgres_data: # Define el nuevo volumen para Postgres
