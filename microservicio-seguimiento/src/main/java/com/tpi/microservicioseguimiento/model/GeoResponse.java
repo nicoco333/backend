@@ -1,4 +1,4 @@
-package com.tpi.microservicioseguimiento.service;
+package com.tpi.microservicioseguimiento.model;
 
 /**
  * DTO para transportar los datos de respuesta del cálculo de distancia de la API externa.
