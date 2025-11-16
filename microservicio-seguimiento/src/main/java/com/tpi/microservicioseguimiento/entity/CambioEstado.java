@@ -1,68 +1,67 @@
 package com.tpi.microservicioseguimiento.entity;
 
-import com.tpi.microservicioseguimiento.entity.enums.EstadoTramo;
+// ¡El import del Enum desaparece!
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate; // Para fecha
+import java.time.LocalTime; // Para hora
 
 @Entity
-@Table(name = "cambios_estado")
+@Table(name = "cambios_estado") // Coincide con el DER
 public class CambioEstado {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_cambioEstado") // Coincide con el DER
     private Long id;
 
-    // Fecha y hora exacta en que ocurrió la transición (obligatorio para trazabilidad)
-    @Column(name = "fecha_hora", nullable = false)
-    private LocalDateTime fechaHora;
+    @Column(name = "fechaInicio") // Coincide con el DER
+    private LocalDate fechaInicio;
 
-    // El nuevo estado al que se transicionó
-    @Enumerated(EnumType.STRING) // Guarda el nombre del ENUM como String
-    @Column(name = "nuevo_estado", nullable = false)
-    private EstadoTramo nuevoEstado;
+    @Column(name = "horaInicio") // Coincide con el DER
+    private LocalTime horaInicio;
+    
+    @Column(name = "fechaFin") // Coincide con el DER
+    private LocalDate fechaFin;
 
-    // Clave foránea al Tramo al que aplica este cambio de estado
+    @Column(name = "horaFin") // Coincide con el DER
+    private LocalTime horaFin;
+
+    // ¡CAMBIO CLAVE! FK a la tabla Estado
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tramo_id", nullable = false)
+    @JoinColumn(name = "idEstado", nullable = false) // Coincide con el DER
+    private Estado estado;
+
+    // (Tu DER no tiene este enlace, pero tu lógica anterior sí. Lo mantenemos
+    // porque es lógicamente necesario para saber a qué tramo pertenece el cambio)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tramo_id") 
     private Tramo tramo; 
 
-    // 1. Constructor vacío (requerido por JPA)
+    // Constructor vacío
     public CambioEstado() {
-        // Inicializamos la fecha al momento de la creación para registrar el cambio
-        this.fechaHora = LocalDateTime.now(); 
+        this.fechaInicio = LocalDate.now();
+        this.horaInicio = LocalTime.now();
     }
 
-    // 2. Getters y Setters
+    // Getters y Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public LocalDate getFechaInicio() { return fechaInicio; }
+    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public LocalTime getHoraInicio() { return horaInicio; }
+    public void setHoraInicio(LocalTime horaInicio) { this.horaInicio = horaInicio; }
 
-    public LocalDateTime getFechaHora() {
-        return fechaHora;
-    }
+    public LocalDate getFechaFin() { return fechaFin; }
+    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
 
-    public void setFechaHora(LocalDateTime fechaHora) {
-        this.fechaHora = fechaHora;
-    }
+    public LocalTime getHoraFin() { return horaFin; }
+    public void setHoraFin(LocalTime horaFin) { this.horaFin = horaFin; }
 
-    public EstadoTramo getNuevoEstado() {
-        return nuevoEstado;
-    }
+    public Estado getEstado() { return estado; }
+    public void setEstado(Estado estado) { this.estado = estado; }
 
-    public void setNuevoEstado(EstadoTramo nuevoEstado) {
-        this.nuevoEstado = nuevoEstado;
-    }
-
-    public Tramo getTramo() {
-        return tramo;
-    }
-
-    public void setTramo(Tramo tramo) {
-        this.tramo = tramo;
-    }
+    public Tramo getTramo() { return tramo; }
+    public void setTramo(Tramo tramo) { this.tramo = tramo; }
 }

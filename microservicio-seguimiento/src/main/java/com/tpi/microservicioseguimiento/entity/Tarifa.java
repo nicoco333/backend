@@ -8,31 +8,26 @@ public class Tarifa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idTarifa") // Coincide con el DER
+    private Long idTarifa;
 
-    // "Cargos de Gestión valor fijo"
-    @Column(name = "cargo_gestion", nullable = false)
-    private Double cargoGestion;
+    @Column(name = "nombre", nullable = false, unique = true) // Coincide con el DER
+    private String nombre;
 
-    // "valor del litro" de combustible
-    @Column(name = "valor_litro_combustible", nullable = false)
-    private Double valorLitroCombustible;
-    
-    // "costo por kilómetro base"
-    @Column(name = "costo_km_base")
-    private Double costoKmBase;
+    @Column(name = "costo_base", nullable = false) // Coincide con el DER
+    private Double costoBase;
 
     // Constructor vacío
     public Tarifa() {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Double getCargoGestion() { return cargoGestion; }
-    public void setCargoGestion(Double cargoGestion) { this.cargoGestion = cargoGestion; }
-    public Double getValorLitroCombustible() { return valorLitroCombustible; }
-    public void setValorLitroCombustible(Double valorLitroCombustible) { this.valorLitroCombustible = valorLitroCombustible; }
-    public Double getCostoKmBase() { return costoKmBase; }
-    public void setCostoKmBase(Double costoKmBase) { this.costoKmBase = costoKmBase; }
+    public Long getIdTarifa() { return idTarifa; }
+    public void setIdTarifa(Long idTarifa) { this.idTarifa = idTarifa; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public Double getCostoBase() { return costoBase; }
+    public void setCostoBase(Double costoBase) { this.costoBase = costoBase; }
 }

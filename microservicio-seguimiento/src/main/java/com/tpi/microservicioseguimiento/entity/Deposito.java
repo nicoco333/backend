@@ -8,40 +8,44 @@ public class Deposito {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idDeposito") // Coincide con el DER
+    private Long idDeposito;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre") // Coincide con el DER
     private String nombre;
 
-    @Column(name = "direccion")
-    private String direccion;
+    @Column(name = "costoDia") // Coincide con el DER
+    private Double costoDia;
 
-    // "coordenadas" (Latitud y Longitud)
-    @Column(name = "latitud")
+    @Column(name = "direccionTextual") // Coincide con el DER
+    private String direccionTextual;
+
+    @Column(name = "latitud") // Coincide con el DER
     private Double latitud;
 
-    @Column(name = "longitud")
+    @Column(name = "longitud") // Coincide con el DER
     private Double longitud;
-
-    // "costo de estadía diario"
-    @Column(name = "costo_estadia_diario")
-    private Double costoEstadiaDiario;
 
     // Constructor vacío
     public Deposito() {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getIdDeposito() { return idDeposito; }
+    public void setIdDeposito(Long idDeposito) { this.idDeposito = idDeposito; }
+
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public Double getCostoDia() { return costoDia; }
+    public void setCostoDia(Double costoDia) { this.costoDia = costoDia; }
+
+    public String getDireccionTextual() { return direccionTextual; }
+    public void setDireccionTextual(String direccionTextual) { this.direccionTextual = direccionTextual; }
+
     public Double getLatitud() { return latitud; }
     public void setLatitud(Double latitud) { this.latitud = latitud; }
+
     public Double getLongitud() { return longitud; }
     public void setLongitud(Double longitud) { this.longitud = longitud; }
-    public Double getCostoEstadiaDiario() { return costoEstadiaDiario; }
-    public void setCostoEstadiaDiario(Double costoEstadiaDiario) { this.costoEstadiaDiario = costoEstadiaDiario; }
 }

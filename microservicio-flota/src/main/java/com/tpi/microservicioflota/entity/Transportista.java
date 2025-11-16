@@ -8,31 +8,32 @@ public class Transportista {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idTransportista") // Coincide con el DER
+    private Long idTransportista;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre") // Coincide con el DER
     private String nombre;
+    
+    @Column(name = "apellido") // ¡Nuevo!
+    private String apellido;
 
-    @Column(name = "telefono")
+    @Column(name = "licencia") // ¡Nuevo!
+    private String licencia;
+
+    @Column(name = "telefono") // Coincide con el DER
     private String telefono;
 
-    // 1. Constructor vacío (requerido por JPA)
+    // Constructor vacío
     public Transportista() {
     }
 
-    // 2. Constructor con parámetros (el que ya tenías)
-    public Transportista(String nombre, String telefono) {
-        this.nombre = nombre;
-        this.telefono = telefono;
+    // Getters y Setters
+    public Long getIdTransportista() {
+        return idTransportista;
     }
 
-    // 3. Getters y Setters (los que @Data hacía por ti)
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdTransportista(Long idTransportista) {
+        this.idTransportista = idTransportista;
     }
 
     public String getNombre() {
@@ -41,6 +42,22 @@ public class Transportista {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public String getApellido() {
+        return apellido;
+    }
+
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
+
+    public String getLicencia() {
+        return licencia;
+    }
+
+    public void setLicencia(String licencia) {
+        this.licencia = licencia;
     }
 
     public String getTelefono() {

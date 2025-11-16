@@ -7,11 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+// ¡CAMBIO IMPORTANTE! El ID del Camion (patente) ahora es String
 public interface CamionRepository extends JpaRepository<Camion, String> {
     // JpaRepository<TipoDeEntidad, TipoDelID>
 
-    // NUEVO MÉTODO AÑADIDO:
-    // Spring Data JPA entiende que "findByDisponibleTrue" significa:
-    // "SELECT * FROM camiones WHERE disponible = true"
-    List<Camion> findByDisponibleTrue();
+    // ¡MÉTODO ACTUALIZADO!
+    // El campo 'disponible' ahora se llama 'disponibilidad'
+    List<Camion> findByDisponibilidadTrue();
 }

@@ -9,23 +9,18 @@ public class Ruta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idRuta") // Coincide con el DER
+    private Long idRuta;
 
-    // "solicitud" (El TPI sugiere vincularla a una solicitud)
-    // Usamos el ID de la solicitud (que vive en la otra BD/servicio)
-    @Column(name = "solicitud_id", nullable = false)
-    private Long solicitudId;
+    // El ID de la solicitud (del ms-cliente)
+    @Column(name = "idSolicitud", nullable = false) // Coincide con el DER
+    private Long idSolicitud;
 
-    // "cantidadTramos", "cantidadDepositos"
-    @Column(name = "cantidad_tramos")
-    private Integer cantidadTramos;
+    @Column(name = "descripcion") // Coincide con el DER
+    private String descripcion;
 
-    @Column(name = "cantidad_depositos")
-    private Integer cantidadDepositos;
-
-    // Una Ruta está compuesta por muchos Tramos
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "ruta_id")
+    // Una Ruta tiene muchos Tramos
+    @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Tramo> tramos;
 
     // Constructor vacío
@@ -33,14 +28,12 @@ public class Ruta {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getSolicitudId() { return solicitudId; }
-    public void setSolicitudId(Long solicitudId) { this.solicitudId = solicitudId; }
-    public Integer getCantidadTramos() { return cantidadTramos; }
-    public void setCantidadTramos(Integer cantidadTramos) { this.cantidadTramos = cantidadTramos; }
-    public Integer getCantidadDepositos() { return cantidadDepositos; }
-    public void setCantidadDepositos(Integer cantidadDepositos) { this.cantidadDepositos = cantidadDepositos; }
+    public Long getIdRuta() { return idRuta; }
+    public void setIdRuta(Long idRuta) { this.idRuta = idRuta; }
+    public Long getIdSolicitud() { return idSolicitud; }
+    public void setIdSolicitud(Long idSolicitud) { this.idSolicitud = idSolicitud; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
     public List<Tramo> getTramos() { return tramos; }
     public void setTramos(List<Tramo> tramos) { this.tramos = tramos; }
 }

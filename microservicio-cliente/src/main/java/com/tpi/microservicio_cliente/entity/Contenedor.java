@@ -8,31 +8,43 @@ public class Contenedor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idContenedor") // Coincide con el DER
+    private Long idContenedor;
 
-    // "identificación única"
-    @Column(name = "identificacion_unica", nullable = false, unique = true)
-    private String identificacionUnica;
-
-    // "peso"
-    @Column(name = "peso_kg", nullable = false)
+    @Column(name = "peso") // Coincide con el DER
     private Double peso;
 
-    // "volumen"
-    @Column(name = "volumen_m3", nullable = false)
+    @Column(name = "volumen") // Coincide con el DER
     private Double volumen;
+
+    // --- Relaciones del DER ---
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "idCliente") // FK idCliente
+    private Cliente cliente;
+
+    // idDeposito es una FK a un servicio externo (Seguimiento).
+    // Por ahora, lo guardamos solo como el ID.
+    @Column(name = "idDeposito") // FK idDeposito
+    private Long idDeposito;
 
     // Constructor vacío
     public Contenedor() {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getIdentificacionUnica() { return identificacionUnica; }
-    public void setIdentificacionUnica(String identificacionUnica) { this.identificacionUnica = identificacionUnica; }
+    public Long getIdContenedor() { return idContenedor; }
+    public void setIdContenedor(Long idContenedor) { this.idContenedor = idContenedor; }
+
     public Double getPeso() { return peso; }
     public void setPeso(Double peso) { this.peso = peso; }
+
     public Double getVolumen() { return volumen; }
     public void setVolumen(Double volumen) { this.volumen = volumen; }
+
+    public Cliente getCliente() { return cliente; }
+    public void setCliente(Cliente cliente) { this.cliente = cliente; }
+
+    public Long getIdDeposito() { return idDeposito; }
+    public void setIdDeposito(Long idDeposito) { this.idDeposito = idDeposito; }
 }

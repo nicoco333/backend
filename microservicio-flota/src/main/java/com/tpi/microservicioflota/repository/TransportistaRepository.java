@@ -7,10 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TransportistaRepository extends JpaRepository<Transportista, Long> {
     // JpaRepository<TipoDeEntidad, TipoDelID>
-    
-    // Con solo esto, ya tienes métodos como:
-    // .save(transportista)
-    // .findById(id)
-    // .findAll()
-    // .delete(transportista)
+    // Esto sigue funcionando porque el ID (idTransportista) es Long.
 }

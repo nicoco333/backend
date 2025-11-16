@@ -8,15 +8,19 @@ public class Cliente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idCliente") // Coincide con el DER
+    private Long idCliente;
 
-    @Column(name = "nombre_completo", nullable = false)
+    @Column(name = "nombre") // Coincide con el DER
     private String nombre;
+    
+    @Column(name = "apellido") // ¡Nuevo!
+    private String apellido;
 
-    @Column(name = "email")
-    private String email;
+    @Column(name = "mail") // Coincide con el DER
+    private String mail;
 
-    @Column(name = "telefono")
+    @Column(name = "telefono") // Coincide con el DER
     private String telefono;
 
     // Constructor vacío
@@ -24,12 +28,18 @@ public class Cliente {
     }
 
     // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getIdCliente() { return idCliente; }
+    public void setIdCliente(Long idCliente) { this.idCliente = idCliente; }
+
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
+
+    public String getMail() { return mail; }
+    public void setMail(String mail) { this.mail = mail; }
+
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
 }

@@ -1,7 +1,6 @@
 package com.tpi.microservicioseguimiento.entity;
 
-import com.tpi.microservicioseguimiento.entity.enums.EstadoTramo;
-import com.tpi.microservicioseguimiento.entity.enums.TipoTramo;
+// ¡Los imports de 'enums' desaparecen!
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -11,70 +10,82 @@ public class Tramo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idTramo")
+    private Long idTramo;
 
-    // "origen, destino"  (simplificado como String)
-    @Column(name = "origen")
-    private String origen;
+    @Column(name = "orden")
+    private Integer orden;
 
-    @Column(name = "destino")
-    private String destino;
-
-    // "tipo (...)" 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false)
-    private TipoTramo tipo;
-
-    // "estado (...)" 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
-    private EstadoTramo estado;
-
-    // "costoAproximado, costoReal" 
     @Column(name = "costo_aproximado")
     private Double costoAproximado;
 
     @Column(name = "costo_real")
     private Double costoReal;
 
-    // "fechaHoraInicio, fechaHoraFin" 
-    @Column(name = "fecha_hora_inicio")
-    private LocalDateTime fechaHoraInicio;
+    @Column(name = "fecha_estimada_inicio")
+    private LocalDateTime fechaEstimadaInicio;
+    
+    @Column(name = "fecha_estimada_fin")
+    private LocalDateTime fechaEstimadaFin;
 
-    @Column(name = "fecha_hora_fin")
-    private LocalDateTime fechaHoraFin;
+    @Column(name = "fecha_real_inicio")
+    private LocalDateTime fechaRealInicio; 
 
-    // "camion" 
+    @Column(name = "fecha_real_fin")
+    private LocalDateTime fechaRealFin; 
+
+    // --- Relaciones con el DER (¡Corregidas!) ---
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "camion_dominio") // Se relaciona con el ID (dominio) del Camion
+    @JoinColumn(name = "idRuta") // FK a Ruta
+    private Ruta ruta;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_tramo") // FK a la tabla TipoTramo
+    private TipoTramo tipoTramo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patente") // FK a Camion
     private Camion camion;
 
-    // --- Constructores, Getters y Setters (Sin Lombok) ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "idDeposito_origen") // FK a Deposito
+    private Deposito depositoOrigen;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "idDeposito_destino") // FK a Deposito
+    private Deposito depositoDestino;
 
-    public Tramo() {
+    // ¡CAMBIO CLAVE! FK a la tabla Estado
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "idEstado") 
+    private Estado estado;
+
+    // Constructor vacío
+    public Tramo() { }
+
+    // Getters y Setters (solo los necesarios para el controller)
+    public Long getIdTramo() { return idTramo; }
+    public void setIdTramo(Long idTramo) { this.idTramo = idTramo; }
+
+    public Camion getCamion() { return camion; }
+    public void setCamion(Camion camion) { this.camion = camion; }
+
+    public Ruta getRuta() {
+        return ruta;
+    }
+    public void setRuta(Ruta ruta) {
+        this.ruta = ruta;
     }
 
-    // Getters
-    public Long getId() { return id; }
-    public String getOrigen() { return origen; }
-    public String getDestino() { return destino; }
-    public TipoTramo getTipo() { return tipo; }
-    public EstadoTramo getEstado() { return estado; }
-    public Double getCostoAproximado() { return costoAproximado; }
-    public Double getCostoReal() { return costoReal; }
-    public LocalDateTime getFechaHoraInicio() { return fechaHoraInicio; }
-    public LocalDateTime getFechaHoraFin() { return fechaHoraFin; }
-    public Camion getCamion() { return camion; }
+    // ¡MÉTODO CORREGIDO! Ahora usa la entidad Estado
+    public Estado getEstado() { return estado; }
+    public void setEstado(Estado estado) { this.estado = estado; }
 
-    // Setters
-    public void setId(Long id) { this.id = id; }
-    public void setOrigen(String origen) { this.origen = origen; }
-    public void setDestino(String destino) { this.destino = destino; }
-    public void setTipo(TipoTramo tipo) { this.tipo = tipo; }
-    public void setEstado(EstadoTramo estado) { this.estado = estado; }
-    public void setCostoAproximado(Double costoAproximado) { this.costoAproximado = costoAproximado; }
-    public void setCostoReal(Double costoReal) { this.costoReal = costoReal; }
-    public void setFechaHoraInicio(LocalDateTime fechaHoraInicio) { this.fechaHoraInicio = fechaHoraInicio; }
-    public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
-    public void setCamion(Camion camion) { this.camion = camion; }
+    // Mapeamos los nombres del controller a los campos del DER
+    public LocalDateTime getFechaHoraInicio() { return this.fechaRealInicio; }
+    public void setFechaHoraInicio(LocalDateTime fecha) { this.fechaRealInicio = fecha; }
+
+    public LocalDateTime getFechaHoraFin() { return this.fechaRealFin; }
+    public void setFechaHoraFin(LocalDateTime fecha) { this.fechaRealFin = fecha; }
 }

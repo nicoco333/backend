@@ -7,76 +7,48 @@ import jakarta.persistence.*;
 public class Camion {
 
     @Id
-    @Column(name = "dominio", length = 10)
-    private String dominio;
+    @Column(name = "patente") // Coincide con el DER
+    private String patente;
 
-    @Column(name = "capacidad_peso_kg", nullable = false)
-    private double capacidadPeso;
+    @Column(name = "disponibilidad") // Coincide con el DER
+    private boolean disponibilidad;
 
-    @Column(name = "capacidad_volumen_m3", nullable = false)
-    private double capacidadVolumen;
+    @Column(name = "capacidadKg") // Coincide con el DER
+    private double capacidadKg;
 
-    @Column(name = "consumo_combustible_km", nullable = false)
-    private double consumoCombustiblePromedio;
+    @Column(name = "capacidadM3") // Coincide con el DER
+    private double capacidadM3;
 
-    @Column(name = "costo_km", nullable = false)
-    private double costoBasePorKm;
+    @Column(name = "consumoGL") // Coincide con el DER
+    private double consumoGL;
 
-    @Column(name = "disponible", nullable = false)
-    private boolean disponible;
+    @Column(name = "costo") // Coincide con el DER
+    private double costo;
 
+    // Nota: No incluimos la relación con Transportista aquí
+    // porque este microservicio (Seguimiento) no necesita
+    // saber quién es el conductor, solo sus capacidades.
 
-    // 1. Constructor vacío (requerido por JPA)
+    // Constructor vacío
     public Camion() {
     }
 
-    // 2. Getters y Setters (los que @Data hacía por ti)
-    public String getDominio() {
-        return dominio;
-    }
+    // Getters y Setters
+    public String getPatente() { return patente; }
+    public void setPatente(String patente) { this.patente = patente; }
 
-    public void setDominio(String dominio) {
-        this.dominio = dominio;
-    }
+    public boolean isDisponibilidad() { return disponibilidad; }
+    public void setDisponibilidad(boolean disponibilidad) { this.disponibilidad = disponibilidad; }
 
-    public double getCapacidadPeso() {
-        return capacidadPeso;
-    }
+    public double getCapacidadKg() { return capacidadKg; }
+    public void setCapacidadKg(double capacidadKg) { this.capacidadKg = capacidadKg; }
 
-    public void setCapacidadPeso(double capacidadPeso) {
-        this.capacidadPeso = capacidadPeso;
-    }
+    public double getCapacidadM3() { return capacidadM3; }
+    public void setCapacidadM3(double capacidadM3) { this.capacidadM3 = capacidadM3; }
 
-    public double getCapacidadVolumen() {
-        return capacidadVolumen;
-    }
+    public double getConsumoGL() { return consumoGL; }
+    public void setConsumoGL(double consumoGL) { this.consumoGL = consumoGL; }
 
-    public void setCapacidadVolumen(double capacidadVolumen) {
-        this.capacidadVolumen = capacidadVolumen;
-    }
-
-    public double getConsumoCombustiblePromedio() {
-        return consumoCombustiblePromedio;
-    }
-
-    public void setConsumoCombustiblePromedio(double consumoCombustiblePromedio) {
-        this.consumoCombustiblePromedio = consumoCombustiblePromedio;
-    }
-
-    public double getCostoBasePorKm() {
-        return costoBasePorKm;
-    }
-
-    public void setCostoBasePorKm(double costoBasePorKm) {
-        this.costoBasePorKm = costoBasePorKm;
-    }
-
-    public boolean isDisponible() {
-        return disponible;
-    }
-
-    public void setDisponible(boolean disponible) {
-        this.disponible = disponible;
-    }
-
+    public double getCosto() { return costo; }
+    public void setCosto(double costo) { this.costo = costo; }
 }
