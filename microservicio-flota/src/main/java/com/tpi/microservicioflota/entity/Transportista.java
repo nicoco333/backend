@@ -1,7 +1,9 @@
 package com.tpi.microservicioflota.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "transportistas")
 public class Transportista {

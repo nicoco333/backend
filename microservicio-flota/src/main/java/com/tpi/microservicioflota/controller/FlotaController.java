@@ -3,10 +3,11 @@ package com.tpi.microservicioflota.controller;
 import com.tpi.microservicioflota.entity.Camion;
 import com.tpi.microservicioflota.entity.Tramo;
 import com.tpi.microservicioflota.entity.Transportista;
-import com.tpi.microservicioflota.entity.enums.EstadoTramo;
+import com.tpi.microservicioflota.entity.Estado; // ¡Cambiado!
 import com.tpi.microservicioflota.repository.CamionRepository;
 import com.tpi.microservicioflota.repository.TramoRepository;
 import com.tpi.microservicioflota.repository.TransportistaRepository;
+import com.tpi.microservicioflota.repository.EstadoRepository; // ¡Nuevo!
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,116 +24,88 @@ public class FlotaController {
     private final CamionRepository camionRepository;
     private final TransportistaRepository transportistaRepository;
     private final TramoRepository tramoRepository;
+    private final EstadoRepository estadoRepository; // ¡Inyectado!
 
-    // El constructor sigue igual
+    // ¡Constructor actualizado!
     public FlotaController(CamionRepository camionRepository,
                            TransportistaRepository transportistaRepository,
-                           TramoRepository tramoRepository) {
+                           TramoRepository tramoRepository,
+                           EstadoRepository estadoRepository) { // ¡Inyectado!
         this.camionRepository = camionRepository;
         this.transportistaRepository = transportistaRepository;
         this.tramoRepository = tramoRepository;
+        this.estadoRepository = estadoRepository; // ¡Asignado!
     }
 
-    /**
-     * [ADMIN] Endpoint para registrar un nuevo transportista.
-     * La lógica no cambia.
-     */
-    @PreAuthorize("hasRole('ADMIN')") 
+    // ... (Endpoints /transportistas y /camiones no cambian) ...
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/transportistas")
-    public ResponseEntity<Transportista> registrarTransportista(@RequestBody Transportista transportista) {
-        Transportista nuevoTransportista = transportistaRepository.save(transportista);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoTransportista);
+    public ResponseEntity<Transportista> registrarTransportista(@RequestBody Transportista t) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(transportistaRepository.save(t));
     }
 
-    /**
-     * [ADMIN] Endpoint para registrar un nuevo camión.
-     * La lógica no cambia, pero el JSON que se envía debe coincidir
-     * con la nueva entidad Camion (ej. "patente", "capacidadKg", etc.).
-     */
-    @PreAuthorize("hasRole('ADMIN')") 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/camiones")
     public ResponseEntity<Camion> registrarCamion(@RequestBody Camion camion) {
-        // Ejemplo de JSON esperado ahora:
-        // {
-        //   "patente": "ABC123Z",
-        //   "capacidadKg": 20000.0,
-        //   "capacidadM3": 80.0,
-        //   "consumoGL": 0.3,
-        //   "costo": 1.5,
-        //   "disponibilidad": true,
-        //   "transportista": {
-        //     "idTransportista": 1 
-        //   }
-        // }
-        Camion nuevoCamion = camionRepository.save(camion);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoCamion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(camionRepository.save(camion));
     }
 
-    /**
-     * [ADMIN] Endpoint para consultar camiones libres.
-     * ¡MÉTODO ACTUALIZADO!
-     */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/camiones/disponibles")
     public ResponseEntity<List<Camion>> obtenerCamionesDisponibles() {
-        // Usamos el nuevo método del repositorio (disponibilidad en lugar de disponible)
-        List<Camion> camionesDisponibles = camionRepository.findByDisponibilidadTrue();
-        return ResponseEntity.ok(camionesDisponibles);
+        return ResponseEntity.ok(camionRepository.findByDisponibilidadTrue());
     }
 
-    /**
-     * [TRANSPORTISTA] Endpoint para registrar el inicio de un tramo.
-     * ¡MÉTODO ACTUALIZADO!
-     */
+    // --- ¡LÓGICA DE ESTADO ACTUALIZADA! ---
+
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     @PutMapping("/tramos/{id}/inicio")
     public ResponseEntity<Tramo> registrarInicioTramo(@PathVariable Long id) {
         
-        Optional<Tramo> tramoOptional = tramoRepository.findById(id);
-        if (tramoOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        // 1. Busca el estado "INICIADO" en la base de datos
+        Estado estadoIniciado = estadoRepository.findByNombre("INICIADO")
+                .orElseThrow(() -> new RuntimeException("Estado 'INICIADO' no encontrado."));
 
-        Tramo tramo = tramoOptional.get();
-        tramo.setEstado(EstadoTramo.INICIADO);
+        // 2. Busca el tramo
+        Tramo tramo = tramoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tramo no encontrado."));
+
+        // 3. Asigna los nuevos valores
+        tramo.setEstado(estadoIniciado); // ¡Usa la entidad!
         tramo.setFechaHoraInicio(LocalDateTime.now());
 
-        // Lógica actualizada: setDisponibilidad
         Camion camionAsignado = tramo.getCamion();
         if (camionAsignado != null) {
-            camionAsignado.setDisponibilidad(false); // <-- CAMBIO AQUÍ
+            camionAsignado.setDisponibilidad(false);
             camionRepository.save(camionAsignado);
         }
 
-        Tramo tramoActualizado = tramoRepository.save(tramo);
-        return ResponseEntity.ok(tramoActualizado);
+        return ResponseEntity.ok(tramoRepository.save(tramo));
     }
 
-    /**
-     * [TRANSPORTISTA] Endpoint para registrar el fin de un tramo.
-     * ¡MÉTODO ACTUALIZADO!
-     */
     @PreAuthorize("hasRole('TRANSPORTISTA')")
     @PutMapping("/tramos/{id}/fin")
     public ResponseEntity<Tramo> registrarFinTramo(@PathVariable Long id) {
         
-        Optional<Tramo> tramoOptional = tramoRepository.findById(id);
-        if (tramoOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        // 1. Busca el estado "FINALIZADO" en la base de datos
+        Estado estadoFinalizado = estadoRepository.findByNombre("FINALIZADO")
+                .orElseThrow(() -> new RuntimeException("Estado 'FINALIZADO' no encontrado."));
 
-        Tramo tramo = tramoOptional.get();
-        tramo.setEstado(EstadoTramo.FINALIZADO);
+        // 2. Busca el tramo
+        Tramo tramo = tramoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tramo no encontrado."));
+
+        // 3. Asigna los nuevos valores
+        tramo.setEstado(estadoFinalizado); // ¡Usa la entidad!
         tramo.setFechaHoraFin(LocalDateTime.now());
 
-        // Lógica actualizada: setDisponibilidad
         Camion camionAsignado = tramo.getCamion();
         if (camionAsignado != null) {
-            camionAsignado.setDisponibilidad(true); // <-- CAMBIO AQUÍ
+            camionAsignado.setDisponibilidad(true);
             camionRepository.save(camionAsignado);
         }
 
-        Tramo tramoActualizado = tramoRepository.save(tramo);
-        return ResponseEntity.ok(tramoActualizado);
+        return ResponseEntity.ok(tramoRepository.save(tramo));
     }
 }
