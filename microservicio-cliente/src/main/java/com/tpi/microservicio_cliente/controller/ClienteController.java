@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDate; // ¡Import nuevo!
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +26,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/cliente")
 public class ClienteController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClienteController.class);
 
     // ¡Repositorios actualizados!
     private final ClienteRepository clienteRepository;
@@ -47,6 +52,7 @@ public class ClienteController {
     @PreAuthorize("hasRole('CLIENTE')")
     @PostMapping("/clientes")
     public ResponseEntity<Cliente> registrarCliente(@RequestBody Cliente cliente) {
+        logger.info("Registrando nuevo cliente: {}", cliente.getNombre());
         Cliente nuevoCliente = clienteRepository.save(cliente);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoCliente);
     }
@@ -58,6 +64,8 @@ public class ClienteController {
     @PreAuthorize("hasRole('CLIENTE')")
     @PostMapping("/contenedores")
     public ResponseEntity<Contenedor> registrarContenedor(@RequestBody Contenedor contenedor) {
+        Long idCliente = (contenedor.getCliente() != null) ? contenedor.getCliente().getIdCliente() : null;
+        logger.info("Registrando nuevo contenedor. Peso: {}, Cliente ID: {}", contenedor.getPeso(), idCliente);
         // Asumimos que el JSON viene con el idCliente
         // { "peso": 5000, "volumen": 30, "cliente": { "idCliente": 1 } }
         Contenedor nuevoContenedor = contenedorRepository.save(contenedor);
@@ -71,12 +79,9 @@ public class ClienteController {
     @PreAuthorize("hasRole('CLIENTE')")
     @PostMapping("/solicitudes")
     public ResponseEntity<?> crearSolicitud(@RequestBody SolicitudTraslado solicitud) {
-        // Asumimos que el JSON viene con los IDs y los datos del DER
-        // { 
-        //   "cliente": { "idCliente": 1 },
-        //   "contenedor": { "idContenedor": 1 },
-        //   "latitudOrigen": "...", "longitudOrigen": "...", (etc.)
-        // }
+        // Log de operación importante
+        Long idCliente = (solicitud.getCliente() != null) ? solicitud.getCliente().getIdCliente() : null;
+        logger.info("Iniciando nueva solicitud de traslado para Cliente ID: {}", idCliente);
 
         // 1. Buscar el estado inicial "BORRADOR"
         Estado estadoBorrador = estadoRepository.findByNombre("BORRADOR")
@@ -89,6 +94,7 @@ public class ClienteController {
         // (Asumimos que el cliente y contenedor vienen seteados en el JSON)
         
         SolicitudTraslado nuevaSolicitud = solicitudTrasladoRepository.save(solicitud);
+        logger.info("Solicitud creada con éxito. ID: {}", nuevaSolicitud.getIdSolicitud());
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaSolicitud);
     }
 
@@ -111,6 +117,7 @@ public class ClienteController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/solicitudes")
     public ResponseEntity<List<SolicitudTraslado>> listarTodasLasSolicitudes() {
+        logger.info("Administrador consultando todas las solicitudes");
         List<SolicitudTraslado> solicitudes = solicitudTrasladoRepository.findAll();
         return ResponseEntity.ok(solicitudes);
     }
@@ -122,12 +129,15 @@ public class ClienteController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/contenedores/pendientes")
     public ResponseEntity<List<Contenedor>> filtrarContenedoresPendientes() {
+
+        logger.info("Filtrando contenedores pendientes de retiro/entrega");
         
         // 1. Buscar los estados "pendientes" en la BD
         Estado borrador = estadoRepository.findByNombre("BORRADOR").orElse(null);
         Estado programada = estadoRepository.findByNombre("PROGRAMADA").orElse(null);
 
         if (borrador == null || programada == null) {
+            logger.error("Estados requeridos no encontrados para el filtro");
             // No podemos filtrar si los estados no existen
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

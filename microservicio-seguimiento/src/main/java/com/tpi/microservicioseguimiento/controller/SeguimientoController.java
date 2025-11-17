@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;       // <--- IMPORTAR
+import org.slf4j.LoggerFactory; // <--- IMPORTAR
 
 import java.util.List;
 
@@ -19,6 +21,9 @@ import java.util.List;
 @RequestMapping("/api/seguimiento")
 public class SeguimientoController {
 
+
+    // Crear el Logger
+    private static final Logger logger = LoggerFactory.getLogger(SeguimientoController.class);
     // Repositorios
     private final DepositoRepository depositoRepository;
     private final TarifaRepository tarifaRepository;
@@ -96,6 +101,10 @@ public class SeguimientoController {
             @RequestParam String destino,
             @RequestParam double peso,
             @RequestParam double volumen) throws Exception {
+        
+        // Log importante solicitado
+        logger.info("Calculando ruta sugerida y costos. Origen: {}, Destino: {}, Peso: {}, Volumen: {}", 
+                    origen, destino, peso, volumen);
         return geoService.sugerirRuta(origen, destino, peso, volumen);
     }
 
