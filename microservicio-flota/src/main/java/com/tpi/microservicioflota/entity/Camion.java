@@ -1,5 +1,7 @@
 package com.tpi.microservicioflota.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -27,6 +29,7 @@ public class Camion {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "idTransportista") // Coincide con el DER
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Transportista transportista;
 
     // Constructor vacío

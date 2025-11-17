@@ -1,16 +1,17 @@
 package com.tpi.microservicioseguimiento.controller;
 
-import com.tpi.microservicioseguimiento.entity.*; // Importa todas las entidades
-import com.tpi.microservicioseguimiento.repository.*; // Importa todos los repos
+import com.tpi.microservicioseguimiento.entity.*;
+import com.tpi.microservicioseguimiento.repository.*;
 import com.tpi.microservicioseguimiento.model.GeoResponse;
 import com.tpi.microservicioseguimiento.model.RutaSugeridaDTO;
 import com.tpi.microservicioseguimiento.service.GeoService;
+import com.tpi.microservicioseguimiento.service.RutaService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.fasterxml.jackson.databind.ObjectMapper; // Import ObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -18,39 +19,32 @@ import java.util.List;
 @RequestMapping("/api/seguimiento")
 public class SeguimientoController {
 
-    // Todos los repositorios
+    // Repositorios
     private final DepositoRepository depositoRepository;
-    private final RutaRepository rutaRepository;
     private final TarifaRepository tarifaRepository;
-    private final TramoRepository tramoRepository;
-    private final CamionRepository camionRepository;
-    private final EstadoRepository estadoRepository; // ¡Nuevo repo!
-    private final TipoTramoRepository tipoTramoRepository; // ¡Nuevo repo!
+    private final EstadoRepository estadoRepository; // ¡NECESARIO AHORA!
+    private final TipoTramoRepository tipoTramoRepository; // ¡NECESARIO AHORA!
     
-    // El GeoService
+    // Servicios
     private final GeoService geoService;
+    private final RutaService rutaService;
 
     // --- ¡CONSTRUCTOR ACTUALIZADO! ---
     public SeguimientoController(DepositoRepository depositoRepository,
-                                 RutaRepository rutaRepository,
                                  TarifaRepository tarifaRepository,
-                                 TramoRepository tramoRepository,
-                                 CamionRepository camionRepository,
                                  EstadoRepository estadoRepository, // ¡Inyectado!
                                  TipoTramoRepository tipoTramoRepository, // ¡Inyectado!
                                  GeoService geoService,
-                                 ObjectMapper objectMapper) { // ObjectMapper también
+                                 RutaService rutaService) { 
         this.depositoRepository = depositoRepository;
-        this.rutaRepository = rutaRepository;
         this.tarifaRepository = tarifaRepository;
-        this.tramoRepository = tramoRepository;
-        this.camionRepository = camionRepository;
         this.estadoRepository = estadoRepository; // ¡Asignado!
         this.tipoTramoRepository = tipoTramoRepository; // ¡Asignado!
         this.geoService = geoService;
+        this.rutaService = rutaService; 
     }
 
-    // --- Endpoints de Depósitos (Sin cambios) ---
+    // --- Endpoints de Depósitos y Tarifas (sin cambios) ---
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/depositos")
@@ -66,62 +60,32 @@ public class SeguimientoController {
         return ResponseEntity.ok(depositos);
     }
     
-    // --- Endpoint de Tarifas (¡Lógica actualizada al DER!) ---
-    
-    /**
-     * [ADMIN] Crea o actualiza una tarifa por su nombre.
-     * El DER indica que las tarifas se guardan por nombre.
-     * Ejemplo de JSON: {"nombre": "cargo_gestion", "costoBase": 75.0}
-     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/tarifas")
     public ResponseEntity<Tarifa> registrarTarifa(@RequestBody Tarifa nuevaTarifa) {
-        // Busca si ya existe una tarifa con ese nombre
         Tarifa tarifa = tarifaRepository.findByNombre(nuevaTarifa.getNombre())
-                .orElse(nuevaTarifa); // Si no existe, usa la nueva
-        
-        // Actualiza el costo
+                .orElse(nuevaTarifa);
         tarifa.setCostoBase(nuevaTarifa.getCostoBase());
-        
         Tarifa tarifaGuardada = tarifaRepository.save(tarifa);
         return ResponseEntity.status(HttpStatus.CREATED).body(tarifaGuardada);
     }
 
-    // --- Endpoint de Asignar Ruta (¡Lógica actualizada al DER!) ---
+    // --- Endpoint de Asignar Ruta (sin cambios) ---
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/rutas/asignar")
     public ResponseEntity<Ruta> asignarRuta(@RequestBody Ruta ruta) {
-        
-        if (ruta.getTramos() == null || ruta.getTramos().isEmpty()) {
-            return ResponseEntity.badRequest().build(); 
-        }
-
-        // 1. Busca el estado "ASIGNADO" en la base de datos
-        Estado estadoAsignado = estadoRepository.findByNombre("ASIGNADO")
-                .orElseThrow(() -> new RuntimeException("Estado 'ASIGNADO' no encontrado."));
-
-        // 2. Asigna las relaciones (JPA lo necesita)
-        for (Tramo tramo : ruta.getTramos()) {
-            tramo.setRuta(ruta); // Asigna la ruta padre a cada tramo
-            tramo.setEstado(estadoAsignado); // ¡Usa la entidad Estado!
-            
-            // (La lógica para asignar TipoTramo, Camion y Depósitos
-            // debería venir en el JSON de la petición)
-        }
-        
-        Ruta rutaGuardada = rutaRepository.save(ruta);
+        Ruta rutaGuardada = rutaService.asignarRuta(ruta);
         return ResponseEntity.status(HttpStatus.CREATED).body(rutaGuardada);
     }
 
-    // --- Endpoints de Google Maps (Sin cambios, ya usan GeoService) ---
+    // --- Endpoints de Google Maps (sin cambios) ---
 
     @GetMapping("/distancia")
     @PreAuthorize("hasRole('ADMIN')")
     public GeoResponse obtenerDistancia(
             @RequestParam String origen,
             @RequestParam String destino) throws Exception {
-        
         return geoService.calcularDistancia(origen, destino);
     }
 
@@ -132,7 +96,30 @@ public class SeguimientoController {
             @RequestParam String destino,
             @RequestParam double peso,
             @RequestParam double volumen) throws Exception {
-        
         return geoService.sugerirRuta(origen, destino, peso, volumen);
+    }
+
+    // --- ¡NUEVOS ENDPOINTS DE DATOS MAESTROS! ---
+
+    /**
+     * [ADMIN] Crea un nuevo Estado en el sistema.
+     * Ejemplo JSON: {"nombre": "BORRADOR", "ambito": "SOLICITUD"}
+     */
+    @PostMapping("/estados")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Estado> crearEstado(@RequestBody Estado estado) {
+        Estado nuevoEstado = estadoRepository.save(estado);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoEstado);
+    }
+
+    /**
+     * [ADMIN] Crea un nuevo Tipo de Tramo en el sistema.
+     * Ejemplo JSON: {"nombre": "ORIGEN-DESTINO", "descripcion": "..."}
+     */
+    @PostMapping("/tipos-tramo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<TipoTramo> crearTipoTramo(@RequestBody TipoTramo tipoTramo) {
+        TipoTramo nuevoTipoTramo = tipoTramoRepository.save(tipoTramo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoTipoTramo);
     }
 }
