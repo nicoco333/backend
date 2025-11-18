@@ -1,25 +1,25 @@
-version: '3.1'
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.3
     container_name: keycloak
     command: start-dev
     ports:
-      - "8081:8080" # Keycloak
+      - "8081:8080"
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123
+      # [CORRECCIÓN FINAL] Forzamos el DNI de Keycloak para que coincida
+      - KC_HOSTNAME=host.docker.internal
+      - KC_HOSTNAME_PORT=8081
     volumes:
       - keycloak_data:/opt/keycloak/data
 
-  # --- ¡AQUÍ EMPIEZA LO NUEVO! ---
   postgres:
     image: postgres:15
     container_name: postgres-db
     ports:
-      - "5432:5432" # Expone el puerto de Postgres a tu localhost
+      - "5432:5432"
     environment:
-      # Estas variables DEBEN coincidir con application.properties
       - POSTGRES_DB=mi_base_de_datos
       - POSTGRES_USER=mi_usuario
       - POSTGRES_PASSWORD=tpi123
@@ -27,6 +27,82 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  api-gateway:
+    build:
+      context: ../api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak
+      - microservicio-cliente
+      - microservicio-flota
+      - microservicio-seguimiento
+    environment:
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - spring.cloud.gateway.routes[0].id=microservicio-cliente
+      - spring.cloud.gateway.routes[0].uri=http://microservicio-cliente:8085
+      - spring.cloud.gateway.routes[0].predicates[0]=Path=/api/cliente/**
+      - spring.cloud.gateway.routes[1].id=microservicio-seguimiento
+      - spring.cloud.gateway.routes[1].uri=http://microservicio-seguimiento:8083
+      - spring.cloud.gateway.routes[1].predicates[0]=Path=/api/seguimiento/**
+      - spring.cloud.gateway.routes[2].id=microservicio-flota
+      - spring.cloud.gateway.routes[2].uri=http://microservicio-flota:8084
+      - spring.cloud.gateway.routes[2].predicates[0]=Path=/api/flota/**
+      - spring.cloud.compatibility-verifier.enabled=false
+      - server.port=8080
+
+  microservicio-cliente:
+    build:
+      context: ../microservicio-cliente
+    container_name: microservicio-cliente
+    ports:
+      - "8085:8085"
+    depends_on:
+      - postgres
+      - keycloak
+    environment:
+      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
+      - spring.datasource.username=mi_usuario
+      - spring.datasource.password=tpi123
+      - spring.jpa.hibernate.ddl-auto=validate
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - server.port=8085
+
+  microservicio-flota:
+    build:
+      context: ../microservicio-flota
+    container_name: microservicio-flota
+    ports:
+      - "8084:8084"
+    depends_on:
+      - postgres
+      - keycloak
+    environment:
+      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
+      - spring.datasource.username=mi_usuario
+      - spring.datasource.password=tpi123
+      - spring.jpa.hibernate.ddl-auto=validate
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - server.port=8084
+
+  microservicio-seguimiento:
+    build:
+      context: ../microservicio-seguimiento
+    container_name: microservicio-seguimiento
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - keycloak
+    environment:
+      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
+      - spring.datasource.username=mi_usuario
+      - spring.datasource.password=tpi123
+      - spring.jpa.hibernate.ddl-auto=validate
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - server.port=8083
+
 volumes:
   keycloak_data:
-  postgres_data: # Define el nuevo volumen para Postgres
+  postgres_data:
