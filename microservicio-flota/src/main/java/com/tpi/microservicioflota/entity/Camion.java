@@ -1,95 +1,56 @@
 package com.tpi.microservicioflota.entity;
 
+// [CORRECCIÓN] Importar la anotación para ignorar el proxy
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "camiones")
+// [CORRECCIÓN] Esta anotación ignora los campos de proxy de Hibernate
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Camion {
 
     @Id
-    @Column(name = "patente") // Coincide con el DER (reemplaza a 'dominio')
+    @Column(name = "patente")
     private String patente;
 
-    @Column(name = "disponibilidad") // Coincide con el DER
+    @Column(name = "disponibilidad")
     private boolean disponibilidad;
 
-    @Column(name = "capacidadKg") // Coincide con el DER
+    @Column(name = "capacidadKg")
     private double capacidadKg;
 
-    @Column(name = "capacidadM3") // Coincide con el DER
+    @Column(name = "capacidadM3")
     private double capacidadM3;
 
-    @Column(name = "consumoGL") // Coincide con el DER (Gas/Litro?)
+    @Column(name = "consumoGL")
     private double consumoGL;
 
-    @Column(name = "costo") // Coincide con el DER
+    @Column(name = "costo")
     private double costo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idTransportista") // Coincide con el DER
+    @JoinColumn(name = "idTransportista")
+    // [CORRECCIÓN] Esta anotación también es necesaria en la relación
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Transportista transportista;
 
-    // Constructor vacío
+    // ... Getters y Setters (sin cambios) ...
     public Camion() {
     }
-
-    // Getters y Setters
-    public String getPatente() {
-        return patente;
-    }
-
-    public void setPatente(String patente) {
-        this.patente = patente;
-    }
-
-    public boolean isDisponibilidad() {
-        return disponibilidad;
-    }
-
-    public void setDisponibilidad(boolean disponibilidad) {
-        this.disponibilidad = disponibilidad;
-    }
-
-    public double getCapacidadKg() {
-        return capacidadKg;
-    }
-
-    public void setCapacidadKg(double capacidadKg) {
-        this.capacidadKg = capacidadKg;
-    }
-
-    public double getCapacidadM3() {
-        return capacidadM3;
-    }
-
-    public void setCapacidadM3(double capacidadM3) {
-        this.capacidadM3 = capacidadM3;
-    }
-
-    public double getConsumoGL() {
-        return consumoGL;
-    }
-
-    public void setConsumoGL(double consumoGL) {
-        this.consumoGL = consumoGL;
-    }
-
-    public double getCosto() {
-        return costo;
-    }
-
-    public void setCosto(double costo) {
-        this.costo = costo;
-    }
-
-    public Transportista getTransportista() {
-        return transportista;
-    }
-
-    public void setTransportista(Transportista transportista) {
-        this.transportista = transportista;
-    }
+    public String getPatente() { return patente; }
+    public void setPatente(String patente) { this.patente = patente; }
+    public boolean isDisponibilidad() { return disponibilidad; }
+    public void setDisponibilidad(boolean disponibilidad) { this.disponibilidad = disponibilidad; }
+    public double getCapacidadKg() { return capacidadKg; }
+    public void setCapacidadKg(double capacidadKg) { this.capacidadKg = capacidadKg; }
+    public double getCapacidadM3() { return capacidadM3; }
+    public void setCapacidadM3(double capacidadM3) { this.capacidadM3 = capacidadM3; }
+    public double getConsumoGL() { return consumoGL; }
+    public void setConsumoGL(double consumoGL) { this.consumoGL = consumoGL; }
+    public double getCosto() { return costo; }
+    public void setCosto(double costo) { this.costo = costo; }
+    public Transportista getTransportista() { return transportista; }
+    public void setTransportista(Transportista transportista) { this.transportista = transportista; }
 }

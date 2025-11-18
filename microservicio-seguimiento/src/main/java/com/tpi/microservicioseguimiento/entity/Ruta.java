@@ -2,6 +2,8 @@ package com.tpi.microservicioseguimiento.entity;
 
 import jakarta.persistence.*;
 import java.util.List;
+// [CORRECCIÓN] Importar la anotación para romper el bucle
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "rutas")
@@ -9,25 +11,22 @@ public class Ruta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idRuta") // Coincide con el DER
+    @Column(name = "idRuta")
     private Long idRuta;
 
-    // El ID de la solicitud (del ms-cliente)
-    @Column(name = "idSolicitud", nullable = false) // Coincide con el DER
+    @Column(name = "idSolicitud", nullable = false)
     private Long idSolicitud;
 
-    @Column(name = "descripcion") // Coincide con el DER
+    @Column(name = "descripcion")
     private String descripcion;
 
-    // Una Ruta tiene muchos Tramos
+    // [CORRECCIÓN] Esta es la "parte principal" de la relación
+    @JsonManagedReference
     @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Tramo> tramos;
 
-    // Constructor vacío
-    public Ruta() {
-    }
-
-    // Getters y Setters
+    // ... Getters y Setters ...
+    public Ruta() { }
     public Long getIdRuta() { return idRuta; }
     public void setIdRuta(Long idRuta) { this.idRuta = idRuta; }
     public Long getIdSolicitud() { return idSolicitud; }

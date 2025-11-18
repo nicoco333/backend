@@ -1,4 +1,3 @@
-// El package cambiará para cada microservicio
 package com.tpi.microservicio_cliente.config; 
 
 import org.springframework.context.annotation.Bean;
@@ -9,9 +8,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Collection;
 import java.util.List;
@@ -27,10 +24,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                // 1. Permitir acceso público a Swagger y OpenAPI
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                // [CORRECCIÓN] Permitir acceso público a la documentación Swagger
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
-                // 2. Todo lo demás requiere autenticación
+                // Por defecto, TODAS las demás peticiones deben estar autenticadas
                 .anyRequest().authenticated() 
             )
             .oauth2ResourceServer(oauth2 -> oauth2

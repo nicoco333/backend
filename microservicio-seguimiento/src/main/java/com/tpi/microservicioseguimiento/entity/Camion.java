@@ -1,33 +1,37 @@
 package com.tpi.microservicioseguimiento.entity;
 
+// [CORRECCIÓN] Importar para ignorar proxies
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "camiones")
+// [CORRECCIÓN] Ignorar proxies para evitar errores 500 al serializar
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Camion {
 
     @Id
-    @Column(name = "patente") // Coincide con el DER
+    @Column(name = "patente")
     private String patente;
 
-    @Column(name = "disponibilidad") // Coincide con el DER
+    @Column(name = "disponibilidad")
     private boolean disponibilidad;
 
-    @Column(name = "capacidadKg") // Coincide con el DER
+    @Column(name = "capacidadKg")
     private double capacidadKg;
 
-    @Column(name = "capacidadM3") // Coincide con el DER
+    @Column(name = "capacidadM3")
     private double capacidadM3;
 
-    @Column(name = "consumoGL") // Coincide con el DER
+    @Column(name = "consumoGL")
     private double consumoGL;
 
-    @Column(name = "costo") // Coincide con el DER
+    @Column(name = "costo")
     private double costo;
 
-    // Nota: No incluimos la relación con Transportista aquí
-    // porque este microservicio (Seguimiento) no necesita
-    // saber quién es el conductor, solo sus capacidades.
+    // [CORRECCIÓN] El servicio de Seguimiento no necesita saber quién es el Transportista.
+    // Se elimina el campo 'private Transportista transportista;'
 
     // Constructor vacío
     public Camion() {
@@ -51,4 +55,6 @@ public class Camion {
 
     public double getCosto() { return costo; }
     public void setCosto(double costo) { this.costo = costo; }
+
+    // [CORRECCIÓN] Se eliminan los getters/setters de Transportista
 }

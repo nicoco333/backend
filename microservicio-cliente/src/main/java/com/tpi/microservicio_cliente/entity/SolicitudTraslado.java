@@ -3,19 +3,21 @@ package com.tpi.microservicio_cliente.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate; // Import para 'fecha'
 
+// [CORRECCIÓN] Importar CascadeType
+import jakarta.persistence.CascadeType;
+
 @Entity
 @Table(name = "solicitudes_traslado")
 public class SolicitudTraslado {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idSolicitud") // Coincide con el DER
+    @Column(name = "idSolicitud")
     private Long idSolicitud;
 
-    @Column(name = "fecha") // Coincide con el DER
+    @Column(name = "fecha")
     private LocalDate fecha;
 
-    // --- Nuevos campos del DER ---
     @Column(name = "latitudOrigen")
     private Double latitudOrigen;
     
@@ -31,7 +33,6 @@ public class SolicitudTraslado {
     @Column(name = "direccionTextualDestino")
     private String direccionTextualDestino;
 
-    // --- Campos de Costos (ya los teníamos) ---
     @Column(name = "costoEstimado")
     private Double costoEstimado;
 
@@ -44,30 +45,29 @@ public class SolicitudTraslado {
     @Column(name = "tiempoReal")
     private Double tiempoReal;
 
-    // --- Relaciones del DER ---
-
-    // El ID de la Ruta es una FK a un servicio externo
     @Column(name = "idRuta")
     private Long idRuta;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idContenedor") // Coincide con el DER
+    // [CORRECCIÓN] Se añade CascadeType.ALL
+    // Esto le dice a Hibernate que guarde el Contenedor junto con la Solicitud.
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "idContenedor")
     private Contenedor contenedor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idCliente") // Coincide con el DER
+    @JoinColumn(name = "idCliente")
     private Cliente cliente;
 
-    // ¡CAMBIO IMPORTANTE! Ya no es un Enum, es una entidad
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idEstado") // Coincide con el DER
+    @JoinColumn(name = "idEstado")
     private Estado estado;
 
     // Constructor vacío
     public SolicitudTraslado() {
     }
 
-    // Getters y Setters
+    // --- Getters y Setters (Sin cambios) ---
+    
     public Long getIdSolicitud() { return idSolicitud; }
     public void setIdSolicitud(Long idSolicitud) { this.idSolicitud = idSolicitud; }
 

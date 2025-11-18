@@ -11,46 +11,43 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;       // <--- IMPORTAR
-import org.slf4j.LoggerFactory; // <--- IMPORTAR
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+// [CORRECCIÓN] Imports necesarios para el manejo de error
+import java.util.Map;
+import java.util.HashMap;
+import java.util.NoSuchElementException; 
 
 @RestController
 @RequestMapping("/api/seguimiento")
 public class SeguimientoController {
 
-
-    // Crear el Logger
     private static final Logger logger = LoggerFactory.getLogger(SeguimientoController.class);
-    // Repositorios
+    
     private final DepositoRepository depositoRepository;
     private final TarifaRepository tarifaRepository;
-    private final EstadoRepository estadoRepository; // ¡NECESARIO AHORA!
-    private final TipoTramoRepository tipoTramoRepository; // ¡NECESARIO AHORA!
-    
-    // Servicios
+    private final EstadoRepository estadoRepository; 
+    private final TipoTramoRepository tipoTramoRepository;
     private final GeoService geoService;
     private final RutaService rutaService;
 
-    // --- ¡CONSTRUCTOR ACTUALIZADO! ---
     public SeguimientoController(DepositoRepository depositoRepository,
                                  TarifaRepository tarifaRepository,
-                                 EstadoRepository estadoRepository, // ¡Inyectado!
-                                 TipoTramoRepository tipoTramoRepository, // ¡Inyectado!
+                                 EstadoRepository estadoRepository, 
+                                 TipoTramoRepository tipoTramoRepository,
                                  GeoService geoService,
                                  RutaService rutaService) { 
         this.depositoRepository = depositoRepository;
         this.tarifaRepository = tarifaRepository;
-        this.estadoRepository = estadoRepository; // ¡Asignado!
-        this.tipoTramoRepository = tipoTramoRepository; // ¡Asignado!
+        this.estadoRepository = estadoRepository;
+        this.tipoTramoRepository = tipoTramoRepository;
         this.geoService = geoService;
         this.rutaService = rutaService; 
     }
 
-    // --- Endpoints de Depósitos y Tarifas (sin cambios) ---
-
+    // --- Endpoints de Datos Maestros (POST /estados, POST /tarifas, etc.) ---
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/depositos")
     public ResponseEntity<Deposito> registrarDeposito(@RequestBody Deposito deposito) {
@@ -74,46 +71,7 @@ public class SeguimientoController {
         Tarifa tarifaGuardada = tarifaRepository.save(tarifa);
         return ResponseEntity.status(HttpStatus.CREATED).body(tarifaGuardada);
     }
-
-    // --- Endpoint de Asignar Ruta (sin cambios) ---
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/rutas/asignar")
-    public ResponseEntity<Ruta> asignarRuta(@RequestBody Ruta ruta) {
-        Ruta rutaGuardada = rutaService.asignarRuta(ruta);
-        return ResponseEntity.status(HttpStatus.CREATED).body(rutaGuardada);
-    }
-
-    // --- Endpoints de Google Maps (sin cambios) ---
-
-    @GetMapping("/distancia")
-    @PreAuthorize("hasRole('ADMIN')")
-    public GeoResponse obtenerDistancia(
-            @RequestParam String origen,
-            @RequestParam String destino) throws Exception {
-        return geoService.calcularDistancia(origen, destino);
-    }
-
-    @GetMapping("/rutas/sugeridas")
-    @PreAuthorize("hasRole('ADMIN')")
-    public RutaSugeridaDTO sugerirRuta(
-            @RequestParam String origen,
-            @RequestParam String destino,
-            @RequestParam double peso,
-            @RequestParam double volumen) throws Exception {
-        
-        // Log importante solicitado
-        logger.info("Calculando ruta sugerida y costos. Origen: {}, Destino: {}, Peso: {}, Volumen: {}", 
-                    origen, destino, peso, volumen);
-        return geoService.sugerirRuta(origen, destino, peso, volumen);
-    }
-
-    // --- ¡NUEVOS ENDPOINTS DE DATOS MAESTROS! ---
-
-    /**
-     * [ADMIN] Crea un nuevo Estado en el sistema.
-     * Ejemplo JSON: {"nombre": "BORRADOR", "ambito": "SOLICITUD"}
-     */
+    
     @PostMapping("/estados")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Estado> crearEstado(@RequestBody Estado estado) {
@@ -121,14 +79,85 @@ public class SeguimientoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoEstado);
     }
 
-    /**
-     * [ADMIN] Crea un nuevo Tipo de Tramo en el sistema.
-     * Ejemplo JSON: {"nombre": "ORIGEN-DESTINO", "descripcion": "..."}
-     */
     @PostMapping("/tipos-tramo")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TipoTramo> crearTipoTramo(@RequestBody TipoTramo tipoTramo) {
         TipoTramo nuevoTipoTramo = tipoTramoRepository.save(tipoTramo);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoTipoTramo);
+    }
+
+
+    // --- Endpoint de Asignar Ruta ---
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/rutas/asignar")
+    public ResponseEntity<?> asignarRuta(@RequestBody Ruta ruta) {
+        // [CORRECCIÓN] try-catch para manejar si falta el estado "ASIGNADO"
+        try {
+            Ruta rutaGuardada = rutaService.asignarRuta(ruta);
+            return ResponseEntity.status(HttpStatus.CREATED).body(rutaGuardada);
+        } catch (NoSuchElementException e) {
+            logger.error("Error al asignar ruta: {}", e.getMessage());
+            Map<String, Object> body = new HashMap<>();
+            body.put("status", HttpStatus.BAD_REQUEST.value());
+            body.put("error", "Datos Faltantes");
+            body.put("message", e.getMessage()); // ej. "Estado 'ASIGNADO' no encontrado"
+            return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // --- Endpoints de Google Maps ---
+    @GetMapping("/distancia")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> obtenerDistancia(
+            @RequestParam String origen,
+            @RequestParam String destino) {
+        try {
+             GeoResponse dto = geoService.calcularDistancia(origen, destino);
+             return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            // [CORRECCIÓN] Atrapa el error si la API Key falla
+            logger.error("Error al calcular distancia: {}", e.getMessage());
+            Map<String, Object> body = new HashMap<>();
+            body.put("status", HttpStatus.BAD_REQUEST.value());
+            body.put("error", "Error de API Externa");
+            body.put("message", "Fallo al conectar con Google Maps: " + e.getMessage());
+            return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // [CORRECCIÓN] Se agrega try-catch para manejar el 500 y devolver 404
+    @GetMapping("/rutas/sugeridas")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> sugerirRuta(
+            @RequestParam String origen,
+            @RequestParam String destino,
+            @RequestParam double peso,
+            @RequestParam double volumen) {
+        
+        logger.info("Calculando ruta sugerida y costos. Origen: {}, Destino: {}, Peso: {}, Volumen: {}", 
+                     origen, destino, peso, volumen);
+        
+        try {
+            RutaSugeridaDTO sugerencia = geoService.sugerirRuta(origen, destino, peso, volumen);
+            return ResponseEntity.ok(sugerencia);
+
+        } catch (NoSuchElementException e) {
+            // ¡Atrapamos el error de "No hay camiones" o "Faltan tarifas"!
+            logger.warn("No se pudo calcular la ruta: {}", e.getMessage());
+            Map<String, Object> body = new HashMap<>();
+            body.put("status", HttpStatus.NOT_FOUND.value());
+            body.put("error", "No Encontrado");
+            body.put("message", e.getMessage()); // "No se encontraron camiones disponibles..."
+            return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+
+        } catch (Exception e) {
+            // Atrapa cualquier otro error (ej. Google Maps explotó)
+            logger.error("Error inesperado en sugerirRuta: {}", e.getMessage());
+            Map<String, Object> body = new HashMap<>();
+            body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            body.put("error", "Error Interno");
+            body.put("message", e.getMessage());
+            return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
