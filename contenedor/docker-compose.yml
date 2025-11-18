@@ -8,9 +8,12 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123
-      # [CORRECCIÓN FINAL] Forzamos el DNI de Keycloak para que coincida
-      - KC_HOSTNAME=host.docker.internal
+      # ESTO ES CLAVE:
+      # Le decimos a Keycloak: "Tú eres accesible públicamente como localhost:8081"
+      - KC_HOSTNAME=localhost
       - KC_HOSTNAME_PORT=8081
+      - KC_HOSTNAME_STRICT_BACKCHANNEL=false
+      - KC_HTTP_ENABLED=true
     volumes:
       - keycloak_data:/opt/keycloak/data
 
@@ -39,7 +42,13 @@ services:
       - microservicio-flota
       - microservicio-seguimiento
     environment:
-      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      # TRUCO MAESTRO:
+      # 1. issuer-uri: Usamos el nombre interno del contenedor (keycloak:8080) para conectar RÁPIDO.
+      # 2. jwk-set-uri: Forzamos la descarga de claves desde el contenedor.
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
+      - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
+      
+      # Configuración de rutas
       - spring.cloud.gateway.routes[0].id=microservicio-cliente
       - spring.cloud.gateway.routes[0].uri=http://microservicio-cliente:8085
       - spring.cloud.gateway.routes[0].predicates[0]=Path=/api/cliente/**
@@ -65,8 +74,14 @@ services:
       - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
       - spring.datasource.username=mi_usuario
       - spring.datasource.password=tpi123
-      - spring.jpa.hibernate.ddl-auto=validate
-      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - spring.jpa.hibernate.ddl-auto=update
+      
+      # LA SOLUCIÓN:
+      # Issuer: El que viene en el token (localhost:8081)
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
+      # JWK Set: Dónde buscar las claves REALMENTE (dentro de la red docker -> keycloak:8080)
+      - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
+      
       - server.port=8085
 
   microservicio-flota:
@@ -82,8 +97,9 @@ services:
       - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
       - spring.datasource.username=mi_usuario
       - spring.datasource.password=tpi123
-      - spring.jpa.hibernate.ddl-auto=validate
-      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - spring.jpa.hibernate.ddl-auto=update
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
+      - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
       - server.port=8084
 
   microservicio-seguimiento:
@@ -99,8 +115,9 @@ services:
       - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
       - spring.datasource.username=mi_usuario
       - spring.datasource.password=tpi123
-      - spring.jpa.hibernate.ddl-auto=validate
-      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://host.docker.internal:8081/realms/tpi-backend
+      - spring.jpa.hibernate.ddl-auto=update
+      - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
+      - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
       - server.port=8083
 
 volumes:
