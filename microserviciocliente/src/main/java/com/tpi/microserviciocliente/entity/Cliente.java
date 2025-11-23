@@ -1,0 +1,45 @@
+package com.tpi.microserviciocliente.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "clientes")
+public class Cliente {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "idCliente")
+    private Long idCliente;
+
+    @Column(name = "nombre")
+    private String nombre;
+    
+    @Column(name = "apellido")
+    private String apellido;
+
+    @Column(name = "mail")
+    private String mail;
+
+    @Column(name = "telefono")
+    private String telefono;
+
+    // Constructor vacío
+    public Cliente() {
+    }
+
+    // Getters y Setters
+    public Long getIdCliente() { return idCliente; }
+    public void setIdCliente(Long idCliente) { this.idCliente = idCliente; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
+
+    public String getMail() { return mail; }
+    public void setMail(String mail) { this.mail = mail; }
+
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+}

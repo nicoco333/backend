@@ -1,4 +1,5 @@
 services:
+  # --- KEYCLOAK (Identidad y Seguridad) ---
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.3
     container_name: keycloak
@@ -8,8 +9,6 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin123
-      # ESTO ES CLAVE:
-      # Le decimos a Keycloak: "Tú eres accesible públicamente como localhost:8081"
       - KC_HOSTNAME=localhost
       - KC_HOSTNAME_PORT=8081
       - KC_HOSTNAME_STRICT_BACKCHANNEL=false
@@ -17,22 +16,25 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
 
+  # --- BASE DE DATOS (PostgreSQL) ---
   postgres:
     image: postgres:15
     container_name: postgres-db
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=mi_base_de_datos
       - POSTGRES_USER=mi_usuario
       - POSTGRES_PASSWORD=tpi123
-      - TZ=UTC
+      # Crea las 3 bases de datos al inicio
+      - POSTGRES_MULTIPLE_DATABASES=db_cliente,db_flota,db_seguimiento
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
 
+  # --- API GATEWAY ---
   api-gateway:
     build:
-      context: ../api-gateway
+      context: ./api-gateway # Este suele mantener el guion (según tus archivos anteriores)
     container_name: api-gateway
     ports:
       - "8080:8080"
@@ -42,13 +44,10 @@ services:
       - microservicio-flota
       - microservicio-seguimiento
     environment:
-      # TRUCO MAESTRO:
-      # 1. issuer-uri: Usamos el nombre interno del contenedor (keycloak:8080) para conectar RÁPIDO.
-      # 2. jwk-set-uri: Forzamos la descarga de claves desde el contenedor.
       - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
       - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
-      
-      # Configuración de rutas
+      - server.port=8080
+      # Rutas
       - spring.cloud.gateway.routes[0].id=microservicio-cliente
       - spring.cloud.gateway.routes[0].uri=http://microservicio-cliente:8085
       - spring.cloud.gateway.routes[0].predicates[0]=Path=/api/cliente/**
@@ -59,66 +58,62 @@ services:
       - spring.cloud.gateway.routes[2].uri=http://microservicio-flota:8084
       - spring.cloud.gateway.routes[2].predicates[0]=Path=/api/flota/**
       - spring.cloud.compatibility-verifier.enabled=false
-      - server.port=8080
 
+  # --- MICROSERVICIOS DE NEGOCIO ---
+  
   microservicio-cliente:
     build:
-      context: ../microservicio-cliente
-    container_name: microservicio-cliente
-    ports:
-      - "8085:8085"
+      context: ./microserviciocliente # <--- CORREGIDO: Nombre de carpeta SIN guion
+    container_name: microservicio-cliente # <--- MANTENIDO: Nombre de red CON guion (para que funcione IntegrationService)
     depends_on:
       - postgres
       - keycloak
     environment:
-      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
+      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/db_cliente
       - spring.datasource.username=mi_usuario
       - spring.datasource.password=tpi123
-      - spring.jpa.hibernate.ddl-auto=update
-      
-      # LA SOLUCIÓN:
-      # Issuer: El que viene en el token (localhost:8081)
+      - spring.jpa.hibernate.ddl-auto=validate
+      - spring.flyway.enabled=true
       - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
-      # JWK Set: Dónde buscar las claves REALMENTE (dentro de la red docker -> keycloak:8080)
       - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
-      
       - server.port=8085
 
   microservicio-flota:
     build:
-      context: ../microservicio-flota
+      context: ./microservicioflota # <--- CORREGIDO: Nombre de carpeta SIN guion
     container_name: microservicio-flota
-    ports:
-      - "8084:8084"
     depends_on:
       - postgres
       - keycloak
     environment:
-      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
+      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/db_flota
       - spring.datasource.username=mi_usuario
       - spring.datasource.password=tpi123
-      - spring.jpa.hibernate.ddl-auto=update
+      - spring.jpa.hibernate.ddl-auto=validate
+      - spring.flyway.enabled=true
       - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
       - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
       - server.port=8084
 
   microservicio-seguimiento:
     build:
-      context: ../microservicio-seguimiento
+      context: ./microservicioseguimiento # <--- CORREGIDO: Nombre de carpeta SIN guion
     container_name: microservicio-seguimiento
-    ports:
-      - "8083:8083"
     depends_on:
       - postgres
       - keycloak
     environment:
-      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/mi_base_de_datos
+      - spring.datasource.url=jdbc:postgresql://postgres-db:5432/db_seguimiento
       - spring.datasource.username=mi_usuario
       - spring.datasource.password=tpi123
-      - spring.jpa.hibernate.ddl-auto=update
+      - spring.jpa.hibernate.ddl-auto=validate
+      - spring.flyway.enabled=true
       - spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8081/realms/tpi-backend
       - spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://keycloak:8080/realms/tpi-backend/protocol/openid-connect/certs
       - server.port=8083
+      # Variables para comunicación entre microservicios
+      - app.ms-cliente.url=http://microservicio-cliente:8085/api/cliente
+      - app.ms-flota.url=http://microservicio-flota:8084/api/flota
 
 volumes:
   keycloak_data:
